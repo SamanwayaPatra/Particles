@@ -1,0 +1,15 @@
+1.                  # CHST
+14.                 # Mass_No             
+37.87               # FREQ_MHz              
+10                # No of ions            
+98.786              # Beam energy MeVpu   
+1.0                 # Beam Distribution : 1 for Uniform, 2 for Gaussian 
+-0.0001333              # AX                    
+0.084                # BX[mm/MRAD]           
+0.03                 # NOR-EX[PI-mm-MRAD]    
+0.01333               # AY                  
+0.084                # BY[mm/MRAD]       
+0.03                 # NOR-EY[PI-mm-MRAD]  
+0.0                 # AZ       
+0.0027                 # BZ[DEG/%]        
+0.015               # UNNOR-EZ[PI-DEG-%]                      
