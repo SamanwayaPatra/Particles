@@ -1,7 +1,10 @@
 from particles.layout import trailLayout
-from particles.particle import Particle
+from particles.particles import Particles
 from particles.base_logger import logger
 
 Layout = trailLayout()
 p = Particles(Layout)
-p.propagateParticles
+p.readBeamParams("data/Beam_parameters.txt")
+p.twiss()
+p.convertBeamtoParticles()
+p.propagateParticles()
