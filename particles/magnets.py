@@ -43,25 +43,16 @@ class Quadrapole():
         c5 = 1.723
         L = self.L/2 
         lamda = self.lamda
-        Nr = self.G0
-        z0 = self.zc
-        z=z-z0
+        z-=self.zc
+        i=(1,-1)[z<0]
+        k = (i*z-L)/lamda
 
-        if z<0:
-            k = (z+L)/lamda
-        else:
-            k= (z-L)/lamda
-
-        Dr = c0 + c1*k + c2*k*k + c3*k**3 + c4*k**4 + c5*k**5
-        Dr = 1 + np.exp(Dr)
-        G = Nr/Dr
-        dDr = (Dr-1)*(c1 + 2*c2*k + 3*c3*k*k + 4*c4*k**3 + 5*c5*k**4)/lamda
-
-        Bx = G*y 
-        By = G*x 
-        Bz = -G*x*y*dDr/Dr
-
-        B = np.array([Bx, By, Bz])
+        Dr = c0 + (c1 + (c2 + (c3 + (c4 + c5*k)*k)*k)*k)*k #writing it like this makes the computer do less multiplications
+        Dr = 1+np.exp(-Dr)
+        G = self.G0*(Dr-1)/Dr
+        dDr = i*(c1 + (2*c2 + (3*c3 + (4*c4 + 5*c5*k)*k)*k)*k)/lamda/Dr
+        
+        B = np.array([G*y, G*x, -G*x*y*dDr])
         return B
 
     def __str__(self): 
