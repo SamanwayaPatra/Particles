@@ -1,3 +1,4 @@
+from numpy import float64
 from particles.particle import Particle 
 from particles.conversions import *
 from particles.base_logger import logger
@@ -18,12 +19,13 @@ class Particles():
 
     """ 
 
-    def __init__(self,Layout,no_of_particles = 100): 
+    def __init__(self,Layout,observz,no_of_particles = 100): 
         self.No_of_Particles = no_of_particles
         self.t0 = 0
         self.Layout = Layout
-        self.Nelts = len(Layout)
-        logger.info(f"Particles Class Instantiated with Layout {[i.__str__() for i in Layout]}")
+        self.observz=observz
+        self.Nelts = len(observz)
+        #logger.info(f"Particles Class Instantiated with Layout {[i.__str__() for i in Layout]}")
 
     def readBeamParams(self, fname = "Beam_parameters.txt"):
         beam_data = np.loadtxt(fname)
@@ -146,7 +148,6 @@ class Particles():
             InitialX = (x, y, z, vx, vy, vz)
             self.particles[i] = Particle(InitialX)
             # logger.info(f"Generated Particle with Initial Coodrinates {InitialX}")
-            self.Xcross=np.zeros((self.N,self.Nelts,6),dtype=np.float64)
             self.idealvz = PZ/mass
             self.idealz = 0
         logger.info("-"*10 + f"Generated {self.N} Particles from BEAM" + "-"*10)
@@ -170,14 +171,13 @@ class Particles():
         (X, Vx, Y, Vy, Z, Vz) = self.convertBeamtoParticles()
         fig, axs = plt.subplots(3, figsize = (10,10))
         axs[0].scatter(X, Vx)
-        axs[0].set_xlabel("x"); axs[0].set_ylabel("Vx'")
+        axs[0].set_xlabel("x"); axs[0].set_ylabel("Vx")
         axs[1].scatter(Y, Vy)
-        axs[1].set_xlabel("y"); axs[1].set_ylabel("Vy'")
+        axs[1].set_xlabel("y"); axs[1].set_ylabel("Vy")
         axs[2].scatter(Z, Vz)
-        axs[2].set_xlabel("z"); axs[2].set_ylabel("Vz'")
+        axs[2].set_xlabel("z"); axs[2].set_ylabel("Vz")
         # fig.show()
         
-
 
     def createUniformDistribution(self,params=None): 
         if params is None: params = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , 2 ]
@@ -197,13 +197,20 @@ class Particles():
         self.idealz=(zmin+zmax)/2
         self.idealvz=(vzmax+vzmin)/2
     
+    def idealts(self,obsz): #TODO change when implementing Electric Fields
+        retts=np.empty([len(obsz)],dtype=float64)
+        for i in range(len(obsz)):
+            retts[i]=obsz[i]/self.idealvz
+        return retts
+
     def propagateParticles(self): 
-        logger.info("Simulating Particle Trajectory")
+        logger.info("Simulating Paricle Trajectory")
+        obsts=self.idealts(self.observz)
+        self.X=np.empty([self.N,self.Nelts,6],dtype=float64)
         for i in range(self.N):
             print("Calculating Trajectory for Particle : {}/{}".format(i+1, self.N))
             logger.info("Calculating Trajectory for Particle : {}/{}".format(i+1, self.N))
-            self.particles[i].solverRK4(self.Layout)
-            self.Xcross[i] = np.copy(self.particles[i].Xcross)
+            self.X[i]=self.particles[i].solverRK4(self.Layout,obsts)
                        
     def calcSig(self): 
         Nelts = self.Nelts
@@ -213,12 +220,12 @@ class Particles():
         sigma = np.zeros( (Nelts,6,6), np.float64 )
         self.phase = np.zeros( (self.N, self.Nelts, 6), np.float64 )
         
-        for i, mag in enumerate(self.Layout):
-            Xideal[i][2] = mag.zf
+        for i in range(Nelts):
+            Xideal[i][2] = self.observz[i]
             Xideal[i][5] = self.idealvz
             
         for i in range(self.N):
-            deltaX = np.subtract(self.Xcross[i], Xideal)
+            deltaX = np.subtract(self.X[i], Xideal)
 
             for j in range(Nelts):
                 X[j][0] = deltaX[j][0]
@@ -239,7 +246,7 @@ class Particles():
         wb=xlwt.Workbook()
         labels=["x","th(x)","y","th(y)","l","delta"]
         for idx in range(self.Nelts):
-            sheet=wb.add_sheet("Element "+str(idx+1)+"_"+self.Layout[idx].str())
+            sheet=wb.add_sheet("z="+str(self.observz[idx]))
             for i in range(6):
                 sheet.write(0,i,labels[i])
             for i in range(self.N):
@@ -254,7 +261,7 @@ class Particles():
         plt.plot(xaxis,yaxis,'r.')
         plt.xlabel(labels[xax])
         plt.ylabel(labels[yax])
-        plt.title("After Element "+str(idx+1)+" : "+self.Layout[idx].str())
+        plt.title("Ideal Particle at z="+str(self.observz[idx]))
         plt.grid()
         plt.show()
     
@@ -269,19 +276,19 @@ class Particles():
         plt.figure(figsize = (10,7))
         
         plt.subplot(2,2,1)
-        plt.title(f"Phase Space after Element {idx+1} : {self.Layout[idx].str()}")
+        plt.title("Phase Space at z="+str(self.observz[idx]))
         plt.plot(x,xdash,'r.')
         plt.grid()
         plt.xlabel("x")
         plt.ylabel("x'")
         plt.subplot(2,2,2)
-        plt.title(f"Phase Space after Element {idx+1}: {self.Layout[idx].str()}")
+        plt.title("Phase Space at z="+str(self.observz[idx]))
         plt.plot(y,ydash,'r.')
         plt.grid()
         plt.xlabel("y")
         plt.ylabel("y'")
         plt.subplot(2,2,3)
-        plt.title(f"Phase Space after Element {idx+1} : {self.Layout[idx].str()}")
+        plt.title("Phase Space at z="+str(self.observz[idx]))
         plt.plot(z,zdash,'r.')
         plt.grid()
         plt.xlabel("z")
