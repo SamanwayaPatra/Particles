@@ -55,6 +55,28 @@ class Quadrapole():
         B = np.array([G*y, G*x, -G*x*y*dDr])
         return B
 
+    def getBounds(self,cutoff=0.001):
+        k=-self.L/self.lamda/2 #implemented using Newton Raphson method
+        Dr=0.1122+(6.2671+(-1.4982+(3.5882+(-2.1209+1.723*k)*k)*k)*k)*k
+        Dr=1+np.exp(Dr)
+        G0=cutoff*(Dr-1)/Dr
+        prdiff=1e+100
+        diff=1e+99
+        k=(np.log(1/cutoff-1)-0.1122)/6.2671
+        while(prdiff>diff):
+            prdiff=diff
+            Dr=0.1122+(6.2671+(-1.4982+(3.5882+(-2.1209+1.723*k)*k)*k)*k)*k
+            Dr=1+np.exp(-Dr)
+            G=(Dr-1)/Dr
+            dDr=-G*(6.2671+(-2*1.4982+(3*3.5882+(-4*2.1209+5*1.723*k)*k)*k)*k)/Dr
+            G-=G0
+            diff=G/dDr
+            k-=diff
+            diff=np.abs(diff)
+        k*=self.lamda
+        k+=self.L/2
+        return np.array([self.zc-k,self.zc+k])
+
     def __str__(self): 
         return "Quadrupole"
 
@@ -81,12 +103,12 @@ class Drift():
         self.R0 = R0
 
     def field(self, x, y, z):
-        Bx = 0
-        By = 0
-        Bz = 0
-        B = np.array([Bx, By, Bz])
+        B = np.array([0,0,0])
         return B
     
+    def getBounds(self,cutoff=0.001):
+        return np.array([self.zi,self.zf])
+
     def __str__(self): 
         return "Drift"
 

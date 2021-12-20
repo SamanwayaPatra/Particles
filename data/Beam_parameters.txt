@@ -1,7 +1,7 @@
 1.                  # CHST
 14.                 # Mass_No             
 37.87               # FREQ_MHz              
-10                # No of ions            
+100                # No of ions            
 98.786              # Beam energy MeVpu   
 1.0                 # Beam Distribution : 1 for Uniform, 2 for Gaussian 
 -0.0001333              # AX                    
